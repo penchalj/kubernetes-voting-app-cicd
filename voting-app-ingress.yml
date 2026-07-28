@@ -3,20 +3,16 @@ kind: Ingress
 metadata:
   name: voting-app-ingress
   annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Optional but recommended
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
-  ingressClassName: nginx
+  ingressClassName: nginx          # important for newer NGINX Ingress
   rules:
   - http:
       paths:
-      - path: /(/|$)(.*)
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: vote
-            port:
-              number: 80
+      # Vote app
       - path: /vote(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
@@ -24,6 +20,8 @@ spec:
             name: vote
             port:
               number: 80
+
+      # Result app (this is the one that was broken)
       - path: /result(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
