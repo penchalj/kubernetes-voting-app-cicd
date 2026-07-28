@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: result
-        image: dockersamples/examplevotingapp_result
+        image: penchaljdevops/result-app:v1.0
         ports:
         - containerPort: 80
           name: result
