@@ -12,20 +12,27 @@ spec:
   rules:
   - http:
       paths:
-      # Vote app
-      - path: /vote(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /vote
+        pathType: Prefix
         backend:
           service:
             name: vote
             port:
               number: 80
 
-      # Result app (this is the one that was broken)
-      - path: /result(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /result
+        pathType: Prefix
         backend:
           service:
             name: result
             port:
               number: 80
+
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vote
+            port:
+              number: 80
+
