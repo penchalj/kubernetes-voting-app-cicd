@@ -5,9 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-env:
-  DOCKERHUB_USERNAME: penchaljdevops
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -23,7 +20,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     # -------------------------------------------------
-    # Build & Push Docker images
+    # Build & Push (using your existing repo names)
     # -------------------------------------------------
     - name: Build and push Vote image
       uses: docker/build-push-action@v5
@@ -31,8 +28,8 @@ jobs:
         context: ./vote
         push: true
         tags: |
-          ${{ env.DOCKERHUB_USERNAME }}/vote:latest
-          ${{ env.DOCKERHUB_USERNAME }}/vote:${{ github.sha }}
+          penchaljdevops/vote-app:latest
+          penchaljdevops/vote-app:${{ github.sha }}
 
     - name: Build and push Result image
       uses: docker/build-push-action@v5
@@ -40,8 +37,8 @@ jobs:
         context: ./result
         push: true
         tags: |
-          ${{ env.DOCKERHUB_USERNAME }}/result:latest
-          ${{ env.DOCKERHUB_USERNAME }}/result:${{ github.sha }}
+          penchaljdevops/result-app:latest
+          penchaljdevops/result-app:${{ github.sha }}
 
     - name: Build and push Worker image
       uses: docker/build-push-action@v5
@@ -49,8 +46,8 @@ jobs:
         context: ./worker
         push: true
         tags: |
-          ${{ env.DOCKERHUB_USERNAME }}/worker:latest
-          ${{ env.DOCKERHUB_USERNAME }}/worker:${{ github.sha }}
+          penchaljdevops/worker-app:latest
+          penchaljdevops/worker-app:${{ github.sha }}
 
     # -------------------------------------------------
     # Deploy to EKS
