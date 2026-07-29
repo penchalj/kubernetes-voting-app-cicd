@@ -338,6 +338,45 @@ kubectl logs -l app=worker
 
 ---
 
+## Cleanup
+
+### Full Cleanup Sequence
+
+```bash
+# 1. Delete application resources
+kubectl delete -f k8s/ --ignore-not-found
+
+# 2. Uninstall NGINX Ingress Controller
+helm uninstall my-nginx -n ingress-nginx 2>/dev/null
+kubectl delete namespace ingress-nginx --ignore-not-found
+
+# 3. Delete the EKS cluster
+eksctl delete cluster --name penchal-voting-app-cluster --region eu-west-3 --wait
+```
+
+### Quick Check Before Deleting
+
+```bash
+# List your clusters
+eksctl get cluster
+
+# Or specifically
+eksctl get cluster --name penchal-voting-app-cluster --region us-east-1
+```
+
+### One-Liner
+
+```bash
+kubectl delete -f k8s/ --ignore-not-found && \
+helm uninstall my-nginx -n ingress-nginx 2>/dev/null; \
+kubectl delete ns ingress-nginx --ignore-not-found && \
+eksctl delete cluster --name penchal-voting-app-cluster --region us-east-1 --wait
+```
+
+After the cluster deletion finishes (it can take 10–15 minutes), verify in the AWS Console that the EKS cluster, node groups, and associated Load Balancers are gone.
+
+---
+
 ## Project Add-ons
 
 ### HTTPS with cert-manager + Let's Encrypt
