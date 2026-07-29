@@ -118,17 +118,14 @@ flowchart TD
 │   └── workflows/
 │       └── ci-cd-pipeline.yml       # GitHub Actions CI/CD
 ├── k8s/
-│   ├── redis-deployment.yaml
-│   ├── redis-service.yaml
-│   ├── postgres-deployment.yaml
-│   ├── postgres-service.yaml
+│   ├── redis-deployment.yml
+│   ├── postgres-deployment.yml
+│   ├── postgres-pvc.yml
 │   ├── vote-deployment.yaml
-│   ├── vote-service.yaml
-│   ├── result-deployment.yaml
-│   ├── result-service.yaml
+│   ├── result-deployment.yml
 │   ├── worker-deployment.yaml
-│   ├── ingress.yaml
-│   └── secrets.yaml                 # or create via kubectl
+│   ├── voting-app-ingress.yaml
+│   └── db-service.yaml                 # or create via kubectl
 ├── vote/                            # Python Vote app source
 ├── result/                          # Node.js Result app source
 ├── worker/                          # .NET Worker app source
