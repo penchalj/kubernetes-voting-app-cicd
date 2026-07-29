@@ -31,27 +31,35 @@ This project demonstrates a complete **cloud-native DevOps workflow**:
 **Voting Flow:**
 User → Vote App (Python) → Redis → Worker (.NET) → PostgreSQL → Result App (Node.js)
 
+### Application Components
+
+- **Vote (Python)**: A Flask-based web app where users cast a vote between two options.
+- **Redis (in-memory queue)**: Collects incoming votes and temporarily stores them.
+- **Worker (.NET)**: A .NET 7.0 service that consumes votes from Redis and persists them to Postgres.
+- **Postgres (Database)**: Stores votes for long-term persistence.
+- **Result (Node.js/Express)**: Displays vote counts in real time.
+
+This stack is intentionally polyglot (Python, Node.js, .NET) to give hands-on practice with multiple runtimes, container orchestration, and the kind of "messy" multi-service troubleshooting you'll encounter in real deployments.
 
 ---
 
 ## Architecture
 
+```
 Internet
-↓
+   ↓
 AWS Network Load Balancer (created by NGINX Ingress)
-↓
+   ↓
 NGINX Ingress Controller
-├── /vote   → Vote Service   (Python)
-└── /result → Result Service (Node.js)
-↑
-PostgreSQL
-↑
-Worker (.NET)
-↑
-Redis
-
-
-**Mermaid Diagram (renders on GitHub):**
+   ├── /vote   → Vote Service   (Python)
+   └── /result → Result Service (Node.js)
+                       ↑
+                  PostgreSQL
+                       ↑
+                  Worker (.NET)
+                       ↑
+                     Redis
+```
 
 **Mermaid Diagram (renders on GitHub):**
 
@@ -65,9 +73,10 @@ flowchart TD
     Redis --> Worker[Worker Service<br/>.NET]
     Worker --> Postgres[(PostgreSQL)]
     Result --> Postgres
-
 ```
+
 ---
+
 ## Tech Stack
 
 | Layer                    | Technology                  | Purpose                              |
@@ -107,6 +116,7 @@ flowchart TD
 - Docker Hub account
 - GitHub repository with Actions enabled
 - AWS CLI configured (`aws configure`)
+- (For local/non-EKS runs) Python 3.10+, Node.js 18+, .NET 7.0 SDK, Docker
 
 ---
 
@@ -134,7 +144,95 @@ flowchart TD
 
 ---
 
-## How to Deploy
+## Running Locally (Without Kubernetes)
+
+Each service can also be run standalone for quick development/debugging.
+
+### Vote (Python)
+
+```bash
+cd vote
+pip install -r requirements.txt
+python app.py
+```
+Access at [http://localhost:5000](http://localhost:5000).
+
+### Redis
+
+```bash
+redis-server
+```
+Available at `localhost:6379`.
+
+### Worker (.NET)
+
+```bash
+cd worker
+dotnet restore
+dotnet run
+```
+Connects to Redis and Postgres when available.
+
+### Postgres
+
+Install from [postgresql.org/download](https://www.postgresql.org/download/) and start the service (default user/password: `postgres`/`postgres`). Available at `localhost:5432`.
+
+### Result (Node.js)
+
+```bash
+cd result
+npm install
+node server.js
+```
+Access at [http://localhost:4000](http://localhost:4000).
+
+> To see votes flow end-to-end locally, all five components need to be running with environment variables/connection strings pointing at each other.
+
+### Running the Full Stack with Docker Compose
+
+The simplest way to run everything locally:
+
+```bash
+docker compose up
+```
+
+This builds and runs the vote, worker, and result services, plus Redis and Postgres from their official images, wiring up networks, volumes, and environment variables automatically.
+
+Visit [http://localhost:8080](http://localhost:8080) to vote and [http://localhost:8081](http://localhost:8081) to see results.
+
+### Building Individual Docker Images
+
+```bash
+# Vote (Python)
+docker build -t myorg/vote:latest ./vote
+docker run --name vote -p 8080:80 myorg/vote:latest
+
+# Redis (official image)
+docker run --name redis -p 6379:6379 redis:alpine
+
+# Worker (.NET)
+docker build -t myorg/worker:latest ./worker
+docker run --name worker myorg/worker:latest
+
+# Postgres
+docker run --name db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15-alpine
+
+# Result (Node.js)
+docker build -t myorg/result:latest ./result
+docker run --name result -p 8081:80 myorg/result:latest
+```
+
+### Notes on Platforms (arm64 vs amd64)
+
+On arm64 machines (e.g. Apple Silicon M1/M2), if you hit issues with images built for amd64, use `buildx`:
+
+```bash
+docker buildx build --platform linux/amd64 -t myorg/worker:latest ./worker
+```
+
+---
+
+## Deploying to Amazon EKS
 
 ### 1. Create the EKS Cluster
 
@@ -145,17 +243,9 @@ eksctl create cluster \
   --nodes 3 \
   --node-type t3.medium \
   --managed
+```
 
-Tip: Use --managed for managed node groups (recommended).
-Cluster creation usually takes 15–20 minutes.
----
-## Deployment Guide
-
-### 1. Prerequisites
-
-- An existing EKS (or other Kubernetes) cluster
-- `kubectl`, `helm`, and `eksctl` installed and configured
-- Docker Hub account (for CI/CD image pushes)
+> Use `--managed` for managed node groups (recommended). Cluster creation usually takes 15–20 minutes.
 
 ### 2. Create Kubernetes Secrets (Recommended)
 
@@ -351,7 +441,7 @@ helm uninstall my-nginx -n ingress-nginx 2>/dev/null
 kubectl delete namespace ingress-nginx --ignore-not-found
 
 # 3. Delete the EKS cluster
-eksctl delete cluster --name penchal-voting-app-cluster --region eu-west-3 --wait
+eksctl delete cluster --name voting-app-cluster --region us-east-1 --wait
 ```
 
 ### Quick Check Before Deleting
@@ -361,7 +451,7 @@ eksctl delete cluster --name penchal-voting-app-cluster --region eu-west-3 --wai
 eksctl get cluster
 
 # Or specifically
-eksctl get cluster --name penchal-voting-app-cluster --region us-east-1
+eksctl get cluster --name voting-app-cluster --region us-east-1
 ```
 
 ### One-Liner
@@ -370,7 +460,7 @@ eksctl get cluster --name penchal-voting-app-cluster --region us-east-1
 kubectl delete -f k8s/ --ignore-not-found && \
 helm uninstall my-nginx -n ingress-nginx 2>/dev/null; \
 kubectl delete ns ingress-nginx --ignore-not-found && \
-eksctl delete cluster --name penchal-voting-app-cluster --region us-east-1 --wait
+eksctl delete cluster --name voting-app-cluster --region us-east-1 --wait
 ```
 
 After the cluster deletion finishes (it can take 10–15 minutes), verify in the AWS Console that the EKS cluster, node groups, and associated Load Balancers are gone.
@@ -442,8 +532,13 @@ eksctl delete cluster --name voting-app-cluster --region us-east-1
 - GitHub Actions CI/CD for cloud-native apps
 - Service discovery inside Kubernetes
 - Production-ready microservices patterns
+- Multi-runtime containerization (Python, Node.js, .NET) with Docker & Docker Compose
 
 ---
 
-Good luck! This project gives you practical, end-to-end exposure to modern cloud-native DevOps workflows — from container builds all the way to automated deployment on Amazon EKS.
+Good luck! This project gives you practical, end-to-end exposure to modern cloud-native DevOps workflows — from container builds and local Docker Compose runs all the way to automated deployment on Amazon EKS.
 
+> **Note**: Application source code (vote, result, worker) is based on
+> [Pokfinner/ironhack-project-1](https://github.com/Pokfinner/ironhack-project-1) (Apache 2.0 License).
+
+<!-- © 2024 | Ironhack -->
