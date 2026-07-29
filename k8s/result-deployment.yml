@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: result
-        image: penchaljdevops/result-app:v1.0
+        image: penchaljdevops/result-app:latest
         ports:
         - containerPort: 80
           name: result
