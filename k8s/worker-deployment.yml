@@ -16,4 +16,4 @@ spec:
     spec:
       containers:
       - name: worker
-        image: dockersamples/examplevotingapp_worker
+        image: penchaljdevops/worker-app:latest
