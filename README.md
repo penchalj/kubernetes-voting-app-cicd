@@ -112,9 +112,11 @@ flowchart TD
 
 ## Project Structure
 
+```
+.
 ├── .github/
 │   └── workflows/
-│       └── ci-cd-pipeline.yml          # GitHub Actions CI/CD
+│       └── ci-cd-pipeline.yml       # GitHub Actions CI/CD
 ├── k8s/
 │   ├── redis-deployment.yaml
 │   ├── redis-service.yaml
@@ -126,11 +128,12 @@ flowchart TD
 │   ├── result-service.yaml
 │   ├── worker-deployment.yaml
 │   ├── ingress.yaml
-│   └── secrets.yaml                    # or create via kubectl
-├── vote/                               # Python Vote app source
-├── result/                             # Node.js Result app source
-├── worker/                             # .NET Worker app source
+│   └── secrets.yaml                 # or create via kubectl
+├── vote/                            # Python Vote app source
+├── result/                          # Node.js Result app source
+├── worker/                          # .NET Worker app source
 └── README.md
+```
 
 ---
 
