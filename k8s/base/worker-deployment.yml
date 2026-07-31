@@ -16,4 +16,4 @@ spec:
     spec:
       containers:
       - name: worker
-        image: penchaljdevops/worker-app:138a83e0bc0ba869edd4b6fa672d89b6d16728bd
+        image: penchaljdevops/worker-app:8d01bb7789213618a2f9295a048a9fb0cd532f77
