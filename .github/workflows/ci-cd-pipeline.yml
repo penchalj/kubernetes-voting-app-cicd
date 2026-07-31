@@ -3,6 +3,11 @@ name: Build, SonarCloud, Update Images (GitOps)
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'vote/**'
+      - 'result/**'
+      - 'worker/**'
+      - '.github/workflows/ci-cd-pipeline.yml'
   workflow_dispatch:
 
 jobs:
