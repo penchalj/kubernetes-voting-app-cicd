@@ -1,4 +1,4 @@
-name: Build, SonarCloud, Deploy Voting App to EKS
+name: Build, SonarCloud, Update Images (GitOps)
 
 on:
   push:
@@ -6,14 +6,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-sonar-deploy:
+  build-sonar-update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # Required to push updated manifests
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0   # Required for better SonarCloud analysis
+        fetch-depth: 0         # Required for better SonarCloud analysis
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     # -------------------------------------------------
     # SonarCloud Analysis (Single Project)
@@ -68,31 +71,28 @@ jobs:
           penchaljdevops/worker-app:${{ github.sha }}
 
     # -------------------------------------------------
-    # Deploy to EKS
+    # Update image tags in Kubernetes manifests (GitOps)
     # -------------------------------------------------
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-
-    - name: Install kubectl
+    - name: Update image tags in manifests
       run: |
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+        echo "Updating manifests with image tag: ${{ github.sha }}"
 
-    - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig --name penchal-voting-app-cluster --region us-east-1
+        # Vote
+        sed -i "s|image: .*vote.*|image: penchaljdevops/vote-app:${{ github.sha }}|g" k8s/base/vote-deployment.yml
 
-    - name: Deploy Kubernetes manifests
-      run: |
-        kubectl apply -f k8s/
+        # Result
+        sed -i "s|image: .*result.*|image: penchaljdevops/result-app:${{ github.sha }}|g" k8s/base/result-deployment.yml
 
-    - name: Verify deployment
+        # Worker
+        sed -i "s|image: .*worker.*|image: penchaljdevops/worker-app:${{ github.sha }}|g" k8s/base/worker-deployment.yml
+
+        echo "=== Updated images ==="
+        grep -E "image:" k8s/base/vote-deployment.yml k8s/base/result-deployment.yml k8s/base/worker-deployment.yml
+
+    - name: Commit and push updated manifests
       run: |
-        kubectl get pods
-        kubectl get svc
-        kubectl get ingress
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add k8s/base/
+        git diff --staged --quiet || git commit -m "chore: update images to ${{ github.sha }}"
+        git push
