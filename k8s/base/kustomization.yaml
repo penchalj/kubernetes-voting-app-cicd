@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - postgres-deployment.yml
+  - postgres-pvc.yml
+  - db-service.yml
+  - redis-deployment.yml
+  - vote-deployment.yml
+  - result-deployment.yml
+  - worker-deployment.yml
+  - voting-app-ingress.yml
+
+commonLabels:
+  app.kubernetes.io/part-of: voting-app
+  app.kubernetes.io/managed-by: argocd
+
+# Optional: set a common namespace later
+# namespace: voting
