@@ -6,7 +6,7 @@ import random
 import json
 import logging
 
-# Read options and Redis configuration from environment variables
+# Read options and Redis configuration from environment variables test
 option_a = os.getenv('OPTION_A', "Cats")
 option_b = os.getenv('OPTION_B', "Dogs")
 redis_host = os.getenv('REDIS_HOST', 'redis')  # Default to 'redis' for compatibility
